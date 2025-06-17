@@ -66,11 +66,29 @@ The script `run_benchmark.sh` calls `benchmark_serving.py` under the hood. For m
 
 ## Results
 
-Complete raw results are on [`results`](results). Benchmarks executed on [io.net](https://io.net)'s cloud.
+Complete raw results are on [`results`](results). Benchmarks executed on [io.net](https://io.net)'s cloud. 
+
+### Pricing Context
+
+As of May 2025, GPU rental pricing shows marked differences between hyperscale cloud providers (AWS, GCP, Azure) and emerging cloud computing platforms including GPU as a Service (GPUaaS). New entrants offer enterprise GPUs at approximately 20% of hyperscaler rates, while consumer GPUs remain exclusive to these platforms. NVIDIA H100 pricing differentials approach 5×, significantly impacting AI workload economics.
+
+**Table** GPU Rental Pricing Comparison Across Cloud Providers
+
+| GPU Model | Alternative Providers (USD/hour) | Hyperscalers (USD/hour) | Notes |
+| --- | --- | --- | --- |
+| NVIDIA H100 SXM | 2.49 | 12.29ᵃ | ᵃ8-GPU instance normalized per unit |
+| NVIDIA H100 PCIe | 1.99 | 8.00–10.00ᵇ | ᵇEstimated range based on typical 65–80% pricing ratio relative to SXM variant |
+| NVIDIA RTX 4090 | 0.25 | N/A | Alternative providers only |
+
+*Note: On-demand hourly rates as of May 2025. Base compute costs only; excludes storage, networking, and data transfer charges, which are typically lower or bundled on alternative platforms.*
+
+Subsequent cost-performance analyses utilize alternative provider pricing, as these platforms uniquely offer both consumer and enterprise GPUs, enabling direct comparison between GPU categories within a consistent pricing framework. Readers using hyperscaler services should multiply enterprise GPU costs by approximately 5× to reflect their pricing structure.
 
 ### Online Serving
 
-Benchmark for `200` prompts and dataset `sharegpt`.
+The benchmark was executed with `200` prompts using dataset `sharegpt`. The tensor parallelism was set to the maximum available GPUs on the hardware configuration being evaluated, to collect metrics on the overall behaviour.
+
+It's worth noting that when serving models via vLLM, unnecessarily increasing the tensor parallelism to utilize all the available GPUs can, in fact, negatively impact performance due to communication overhead. Thus, one should find the adequate tensor parallelism that handles the model and context size, and identify the optimal QPS (queries-per-second) for the given model/hardware configuration. Then, deliver higher QPSs by load balancing requests across multiple vLLM servers. The orchestration of such a scenario can be achieved in various ways and will not be detailed in this work. It can be handled using Ray/Kubernetes, or even a load balancer that routes traffic to geo-distributed nodes based on location, capacity, Service Level Objective (SLO), and other requirements.
 
 #### Meta-Llama-3-8B-Instruct
 
@@ -165,7 +183,6 @@ Benchmark for `200` prompts and dataset `sharegpt`.
 | 16  | 2 × RTX-4090  | 51.47        | \$0.50               | \$0.007                   | 1619.37               | 3.89               | 843.12         | 727.63           | 1571.76       | 1947.71       |
 | 16  | 4 × RTX-4090  | 41.67        | \$1.00               | \$0.012                   | 1994.82               | 4.80               | 163.87         | 159.71           | 250.68        | 337.07        |
 | 16  | 8 × RTX-4090  | 41.16        | \$2.00               | \$0.023                   | 2026.68               | 4.86               | 148.55         | 144.75           | 221.16        | 266.40        |
-
 
 ## Contributions
 
