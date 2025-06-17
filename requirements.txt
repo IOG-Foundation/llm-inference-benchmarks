@@ -1,0 +1,17 @@
+vllm==0.8.5
+torch==2.6.0
+transformers==4.51.1
+
+# Adapt for your CUDA version (below is for CUDA 12.4)
+flashinfer-python==0.2.2 -i https://flashinfer.ai/whl/cu124/torch2.6/
+datasets
+pynvml
+
+tqdm
+psutil
+py-cpuinfo
+
+matplotlib
+seaborn
+plotly
+tabulate
