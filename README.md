@@ -48,7 +48,7 @@ Run `run_benchmark.sh` with the desired parameters. Example for 200 prompts from
                    --dataset-path ./ShareGPT_V3_unfiltered_cleaned_split.json \
                    --result-dir ./results \
                    --num-prompts 200 \
-                   --gpu-model NVIDIA-H100-PCIe \
+                   --gpu-name NVIDIA-H100-PCIe \
                    --gpu-count 1
 
 ```
@@ -60,7 +60,7 @@ Run `run_benchmark.sh` with the desired parameters. Example for 200 prompts from
 - it saves results to file `result-dir/{BACKEND}_{NUM_PROMPTS}prompts{QPS}qps_{MODEL}_{DATASET}_{GPU_COUNT}x{GPU_NAME}.json`
 - throughput definition: requests completed / duration in seconds
 - goodput definition: requests completed under the goodput metric / duration in seconds
-- parameters gpu-model and gpu-count here serve only as metadata for the saved benchmark results and do not influence the benchmark execution, as they are actually defined on the `vllm serve`.
+- parameters gpu-name and gpu-count here serve only as metadata for the saved benchmark results and do not influence the benchmark execution, as they are actually defined on the `vllm serve`.
 
 The script `run_benchmark.sh` calls `benchmark_serving.py` under the hood. For more information on the underlying parameters, check `vllm`'s benchmark [`README.md`](scripts/benchmarks/README.md).
 
@@ -184,51 +184,7 @@ It's worth noting that when serving models via vLLM, unnecessarily increasing th
 | 16  | 4 × RTX-4090  | 41.67        | \$1.00               | \$0.012                   | 1994.82               | 4.80               | 163.87         | 159.71           | 250.68        | 337.07        |
 | 16  | 8 × RTX-4090  | 41.16        | \$2.00               | \$0.023                   | 2026.68               | 4.86               | 148.55         | 144.75           | 221.16        | 266.40        |
 
-## Contributions
 
-We welcome contributions to improve and expand the LLM inference benchmarking suite. Here's how you can help:
+## Contributing
 
-### Ways to Contribute
-
-- **Add New Models**: Submit benchmarks for additional LLM models
-- **Hardware Configurations**: Share results from different GPU/accelerator setups
-- **Backend Engines:**: Add support for other inference engines beyond vLLM
-- **Improve Scripts**: Enhance benchmark automation, add new metrics, or optimize existing code
-- **Improve Presentation**: Create visualizations, dashboards, or tools to better display and compare benchmark results
-- **Documentation**: Fix typos, clarify instructions, or add examples
-- **Bug Reports**: Report issues with clear reproduction steps
-
-### Submitting Contributions
-
-1. **Fork the Repository**: Create your own fork of the project
-2. **Create a Feature Branch**: Work on a dedicated branch for your feature or fix
-3. **Make Your Changes**: Follow existing code style and conventions
-4. **Test Your Changes**: Ensure benchmarks run successfully with your modifications
-5. **Commit with Clear Messages**: Use descriptive commit messages
-6. **Push and Create PR**: Submit a pull request with a detailed description
-
-### Guidelines
-
-- **Benchmark Results**: When submitting new benchmark results, include:
-  - Hardware specifications (GPU model, VRAM, CPU, RAM)
-  - Software versions (CUDA, PyTorch, vLLM version)
-  - Complete benchmark parameters used
-  - Raw result JSON files in the `results/` directory
-
-- **Testing**:
-  - Test with at least one model before submitting
-  - Verify that it works with `sharegpt` dataset
-  - Ensure backwards compatibility
-
-### Reporting Issues
-
-When reporting issues, please include:
-
-- System specifications (OS, GPU, CUDA version)
-- Complete error messages and stack traces
-- Steps to reproduce the issue
-- Expected vs. actual behavior
-
-### Questions or Suggestions
-
-For questions, suggestions, or discussions about new features, please open an issue with the appropriate label.
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
