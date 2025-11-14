@@ -184,6 +184,54 @@ It's worth noting that when serving models via vLLM, unnecessarily increasing th
 | 16  | 4 × RTX-4090  | 41.67        | \$1.00               | \$0.012                   | 1994.82               | 4.80               | 163.87         | 159.71           | 250.68        | 337.07        |
 | 16  | 8 × RTX-4090  | 41.16        | \$2.00               | \$0.023                   | 2026.68               | 4.86               | 148.55         | 144.75           | 221.16        | 266.40        |
 
+Note: GPU hourly price is assumed $2.00 for each H100 and $0.25 for each RTX-4090
+
+### How to Evaluate in Practice
+
+While the benchmarks utilize all available GPUs for the hardware configuration to collect performance data, production deployments should carefully optimize tensor parallelism sizing. Excessive parallelism can degrade performance due to inter-GPU communication overhead. In practice, operators should:
+
+1. Determine the minimum tensor parallelism required for model and context size
+2. Optionally tune tensor parallelism up aiming specific latency/throughput SLOs
+3. Find the optimal QPS for the combination
+4. Then, for higher QPS, scale horizontally by load-balancing across multiple vLLM instances.
+
+For instance, for the given model DeepSeek-R1-Distill-Qwen-14B and request pattern, from the results table with the performance and cost metrics for the evaluation, the following configurations demonstrate to be in the sweet spot:
+
+- #6: QPS=4, 2 × RTX-4090, TPS=1250.59, TTFT p90=463.89 ms, cost=$0.111/ 1M token
+- #11: QPS=8, 4 × RTX-4090, TPS=1858.57, TTFT p90=265.25 ms, cost=$0.149/ 1M token
+- #13: QPS=16, 1 x H100, TPS=3011.13, TTFT p90=50.38 ms, cost=$0.185/ 1M token
+
+So let's set runs #6 and #13 as the chosen configurations for the RTX 4090 and H100, respectively, for further in-depth analysis.
+
+Figure below shows the scaling pattern that helps to identify the ideal QPS for the configuration.
+
+![aibc2025](aibc2025/scaling_pattern_DS-R1-Qwen-14B.png)
+Scaling Pattern Target QPS and Achieved Requests per Second.
+
+We compare the target QPS (the one triggered by the benchmark) and the achieved throughput (requests/s): H100 closely follows the ideal 100% scaling line up to ≈8 req/s, then begins to plateau around 7.8 req/s at 16–32 QPS, reflecting the card’s device-level throughput limit; 2× RTX 4090 scales nearly linearly up to 4 QPS (≈3.2 req/s), but beyond this point yields diminishing returns, plateauing at ≈3.9 req/s at 16–32 QPS. Increasing to 4 local cards shows almost no additional throughput, indicating that on-node memory and inter-GPU communication become the bottlenecks; 4 nodes × (2 × RTX 4090) overcomes these local limits: at 16 QPS, it achieves ≈12 req/s (≈1.5× the H100). Horizontal sharding across multiple inference servers is preferable to pushing a single replica past this knee.
+For RTX 4090 configuration, with QPS > 8, to avoid queue congestion and increased tail latency, one would load balance, for example, among: 4 vLLM server instances of 2 x RTX 4090 or 2 instances of 4 x RTX 4090, depending on the SLO requirements and expected steady stream duration, ideally dynamically routing based on instances real time capacity. For H100 configuration, with QPS > 16, to keep latency < 100ms, one would load balance to other instances (for example 2 vLLM instances of H100); or keep 1 instance of H100 with QPS ≤ 32 if some jitter is allowed. Such orchestration across multiple vLLM servers is outside the scope of the collected measured benchmark and is typically implemented using specific frameworks (e.g., Ray, Kubernetes) and custom load balancers.
+H100 maintained sub-55 ms P99 time-to-first-token. Ideal for real-time applications and tight SLOs. The 4090 clusters deliver markedly better unit economics. Suitable for research, dev/test environments, and any traffic that can tolerate 200–500 ms tail latencies, including stream chat with latency allowed, batch summarization, embedding, and eval sweeps. They could default to small 4096 pools and use H100 when latency or head-of-line jitter dominates the user experience. Distributed 4-node RTX 4090 outperforms a single H100 in raw requests throughput (≈12 req/s at 16 QPS) while remaining cost-competitive ($0.111 / 1M token). 
+Cost-performance sweet spot: 2× RTX 4090 is the most efficient demonstrating 4–7× more throughput per dollar than H100 across typical QPS. H100 shines when latency SLOs or peak throughput demands exceed what small consumer clusters can deliver.
+
+## Citation
+
+If you use this work in your research, please cite¹:
+
+```bibtex
+@inproceedings{almeida2025gpus,
+  author    = {Aline Ribeiro de Almeida},
+  title     = {Idle Consumer GPUs as a Complement to Enterprise Hardware for LLM Inference: Performance, Cost and Carbon Analysis},
+  booktitle = {Proceedings of the 2025 6th International Artificial Intelligence and Blockchain Conference (AIBC 2025)},
+  year      = {2025},
+  doi       = {10.1145/3775043.3775047},
+  isbn      = {979-8-4007-1967-7/2025/09},
+  publisher = {Association for Computing Machinery},
+  location  = {Tokyo, Japan},
+  month     = sep
+}
+```
+
+¹ to be updated after final publication. Preprint: [aibc2025](aibc2025/aibc2025_accepted_preprint.pdf)
 
 ## Contributing
 
